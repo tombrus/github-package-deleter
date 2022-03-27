@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="RemoteRepositoriesConfiguration">
+    <remote-repository>
+      <option name="id" value="central" />
+      <option name="name" value="Maven Central repository" />
+      <option name="url" value="https://repo1.maven.org/maven2" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="jboss.community" />
+      <option name="name" value="JBoss Community repository" />
+      <option name="url" value="https://repository.jboss.org/nexus/content/repositories/public/" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="33599724-13d1-43bd-9114-3834ecd0a5d3" />
+      <option name="name" value="33599724-13d1-43bd-9114-3834ecd0a5d3" />
+      <option name="url" value="https://repo.maven.apache.org/maven2" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="5d1d17b9-3ade-4164-8802-14d0374a3922" />
+      <option name="name" value="5d1d17b9-3ade-4164-8802-14d0374a3922" />
+      <option name="url" value="https://maven.pkg.github.com/ModelingValueGroup" />
+    </remote-repository>
+  </component>
+</project>
