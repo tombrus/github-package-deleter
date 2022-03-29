@@ -120,13 +120,22 @@
       <component id="9b9e5" class="javax.swing.JLabel" binding="rateLimitLabel">
         <constraints>
           <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="0" indent="0" use-parent-layout="false"/>
-          <gridbag top="0" left="5" bottom="5" right="10" weightx="0.0" weighty="0.0"/>
+          <gridbag top="0" left="0" bottom="15" right="15" weightx="0.0" weighty="0.0"/>
         </constraints>
         <properties>
           <horizontalAlignment value="4"/>
           <minimumSize width="45" height="12"/>
           <text value="..."/>
           <toolTipText value="API calls remaining"/>
+        </properties>
+      </component>
+      <component id="38697" class="javax.swing.JButton" binding="refreshButton" default-binding="true">
+        <constraints>
+          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+          <gridbag top="0" left="10" bottom="15" right="0" weightx="0.0" weighty="0.0"/>
+        </constraints>
+        <properties>
+          <text value="Refresh"/>
         </properties>
       </component>
     </children>

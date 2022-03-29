@@ -43,6 +43,7 @@ public class GithubPackageDeleter {
     public  JLabel      settingsInfoLabel;
     private JTree       packageTree;
     public  JLabel      rateLimitLabel;
+    private JButton     refreshButton;
 
     //==========================================================================
     private final JFrame           frame;
@@ -122,6 +123,7 @@ public class GithubPackageDeleter {
                 clickInTree(e);
             }
         });
+        refreshButton.addActionListener(e -> refreshPackageTree());
 
         SwingUtilities.invokeLater(() -> {
             frame.setVisible(true);
@@ -333,8 +335,16 @@ public class GithubPackageDeleter {
         gbc.gridx  = 1;
         gbc.gridy  = 1;
         gbc.anchor = GridBagConstraints.EAST;
-        gbc.insets = new Insets(0, 5, 5, 10);
+        gbc.insets = new Insets(0, 0, 15, 15);
         mainPanel.add(rateLimitLabel, gbc);
+        refreshButton = new JButton();
+        refreshButton.setText("Refresh");
+        gbc        = new GridBagConstraints();
+        gbc.gridx  = 0;
+        gbc.gridy  = 1;
+        gbc.fill   = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(0, 10, 15, 0);
+        mainPanel.add(refreshButton, gbc);
         label1.setLabelFor(githubTokenField);
         label2.setLabelFor(userOrOrganizationField);
     }
