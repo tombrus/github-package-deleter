@@ -3,6 +3,8 @@ package com.tombrus.githubPackageDeleter;
 import java.security.Key;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -10,6 +12,7 @@ import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.spec.SecretKeySpec;
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.MutableTreeNode;
 
 public class U {
     private static final String CRYPT_ALGORITHM = "DESede";
@@ -32,20 +35,11 @@ public class U {
     }
 
     public static void sort(DefaultMutableTreeNode node) {
-        for (int i = 0; i < node.getChildCount() - 1; i++) {
-            DefaultMutableTreeNode nodeA  = (DefaultMutableTreeNode) node.getChildAt(i);
-            String                 labelA = nodeA.toString();
-
-            for (int j = i + 1; j <= node.getChildCount() - 1; j++) {
-                DefaultMutableTreeNode nodeB  = (DefaultMutableTreeNode) node.getChildAt(j);
-                String                 labelB = nodeB.toString();
-
-                if (labelA.compareToIgnoreCase(labelB) > 0) {
-                    node.insert(nodeA, j);
-                    node.insert(nodeB, i);
-                }
-            }
-        }
+        Collections.list(node.children())
+                .stream()
+                .map(c->(MutableTreeNode)c)
+                .sorted(Comparator.comparing(Object::toString).reversed())
+                .forEach(c->node.insert(c,0));
     }
 
     public static String encrypt(String toEncrypt) {
