@@ -1,8 +1,5 @@
 package com.tombrus.githubPackageDeleter;
 
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 
@@ -39,29 +36,23 @@ public class UserOrOrganizationDetails extends Details {
     }
 
     public void startDownload() {
-        CompletableFuture<List<PackageDetails>> list = new PackageLister(this).list();
-        list.thenAcceptAsync(l -> {
-            numPackages = l.size();
-            SwingUtilities.invokeLater(() -> {
-                removeAllChildren();
+        new PackageLister(this).list().whenCompleteAsync((l, thr) -> SwingUtilities.invokeLater(() -> {
+            assert l != null;
+            numPackages = thr != null ? -1 : l.size();
+            removeAllChildren();
+            String message;
+            if (thr == null) {
+                message = "ok";
                 l.forEach(this::add);
-                packageTreeModel.nodeStructureChanged(this);
                 l.forEach(PackageDetails::startDownload);
                 githubPackageDeleter.showDeleterPaneIfNoSettingsChange();
-                githubPackageDeleter.settingsInfoLabel.setText("ok");
-            });
-        });
-        list.exceptionallyAsync(throwable -> {
-            numPackages = -1;
-            SwingUtilities.invokeLater(() -> {
-                removeAllChildren();
-                String message = throwable.getCause().getMessage();
+            } else {
+                message = thr.getCause().getMessage();
                 add(new DefaultMutableTreeNode(message));
-                packageTreeModel.nodeStructureChanged(this);
-                githubPackageDeleter.settingsInfoLabel.setText(message);
-            });
-            return null;
-        });
+            }
+            githubPackageDeleter.settingsInfoLabel.setText(message);
+            packageTreeModel.nodeStructureChanged(this);
+        }));
     }
 
     @Override

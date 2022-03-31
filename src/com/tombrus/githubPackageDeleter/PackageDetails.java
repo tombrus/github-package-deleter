@@ -1,8 +1,6 @@
 package com.tombrus.githubPackageDeleter;
 
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import javax.swing.*;
@@ -41,37 +39,34 @@ public class PackageDetails extends Details {
     }
 
     public void startDownload() {
-        CompletableFuture<List<VersionDetails>> list = new VersionLister(this)
+        new VersionLister(this)
                 .peek(a -> name = a.data.node.name)
-                .list();
-        list.thenAcceptAsync(l -> SwingUtilities.invokeLater(() -> {
-            if (name.startsWith("deleted_")) {
-                int thisIndex = this.getParent().getIndex(this);
-                this.removeFromParent();
-                packageTreeModel.nodesWereRemoved(userOrOrganizationDetails, new int[]{thisIndex}, new Object[]{this});
-            } else {
-                // remove all non Details nodes (can be the initial "..." node)
-                childrenStream().filter(c -> !(c instanceof Details)).toList().forEach(DefaultMutableTreeNode::removeFromParent);
+                .list().whenCompleteAsync((l, thr) -> SwingUtilities.invokeLater(() -> {
+                    if (thr != null) {
+                        removeAllChildren();
+                        add(new DefaultMutableTreeNode(thr.getMessage()));
+                        packageTreeModel.nodeStructureChanged(this);
+                        packageTreeModel.nodeChanged(userOrOrganizationDetails);
+                    } else {
+                        if (name.startsWith("deleted_")) {
+                            int thisIndex = this.getParent().getIndex(this);
+                            this.removeFromParent();
+                            packageTreeModel.nodesWereRemoved(userOrOrganizationDetails, new int[]{thisIndex}, new Object[]{this});
+                        } else {
+                            // remove all non Details nodes (can be the initial "..." node)
+                            childrenStream().filter(c -> !(c instanceof Details)).toList().forEach(DefaultMutableTreeNode::removeFromParent);
 
-                Map<String, VersionDetails> oldVersionMap = childrenStream().map(c -> (VersionDetails) c).collect(Collectors.toMap(c -> c.name, c -> c));
-                Map<String, VersionDetails> newVersionMap = l.stream().collect(Collectors.toMap(c -> c.name, c -> c));
-                oldVersionMap.values().stream().filter(c -> !newVersionMap.containsKey(c.name)).forEach(DefaultMutableTreeNode::removeFromParent);
-                newVersionMap.values().stream().filter(c -> !oldVersionMap.containsKey(c.name)).forEach(this::add);
-                U.sort(this);
+                            Map<String, VersionDetails> oldVersionMap = childrenStream().map(c -> (VersionDetails) c).collect(Collectors.toMap(c -> c.name, c -> c));
+                            Map<String, VersionDetails> newVersionMap = l.stream().collect(Collectors.toMap(c -> c.name, c -> c));
+                            oldVersionMap.values().stream().filter(c -> !newVersionMap.containsKey(c.name)).forEach(DefaultMutableTreeNode::removeFromParent);
+                            newVersionMap.values().stream().filter(c -> !oldVersionMap.containsKey(c.name)).forEach(this::add);
+                            U.sort(this);
 
-                packageTreeModel.nodeStructureChanged(this);
-                packageTreeModel.nodeChanged(userOrOrganizationDetails);
-            }
-        }));
-        list.exceptionallyAsync(throwable -> {
-            SwingUtilities.invokeLater(() -> {
-                removeAllChildren();
-                add(new DefaultMutableTreeNode(throwable.getMessage()));
-                packageTreeModel.nodeStructureChanged(this);
-                packageTreeModel.nodeChanged(userOrOrganizationDetails);
-            });
-            return null;
-        });
+                            packageTreeModel.nodeStructureChanged(this);
+                            packageTreeModel.nodeChanged(userOrOrganizationDetails);
+                        }
+                    }
+                }));
     }
 
     @Override

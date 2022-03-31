@@ -1,8 +1,5 @@
 package com.tombrus.githubPackageDeleter;
 
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 
@@ -35,24 +32,17 @@ public class VersionDetails extends Details {
     }
 
     public void startDownload() {
-        CompletableFuture<List<FileDetails>> list = new FileLister(this).list();
-        list.thenAcceptAsync(l -> SwingUtilities.invokeLater(() -> {
+        new FileLister(this).list().whenCompleteAsync((l, thr) -> SwingUtilities.invokeLater(() -> {
             removeAllChildren();
-            l.forEach(this::add);
+            if (thr == null) {
+                l.forEach(this::add);
+            } else {
+                add(new DefaultMutableTreeNode(thr.getMessage()));
+            }
             packageTreeModel.nodeStructureChanged(this);
             packageTreeModel.nodeChanged(packageDetails);
             packageTreeModel.nodeChanged(packageDetails.userOrOrganizationDetails);
         }));
-        list.exceptionallyAsync(throwable -> {
-            SwingUtilities.invokeLater(() -> {
-                removeAllChildren();
-                add(new DefaultMutableTreeNode(throwable.getMessage()));
-                packageTreeModel.nodeStructureChanged(this);
-                packageTreeModel.nodeChanged(packageDetails);
-                packageTreeModel.nodeChanged(packageDetails.userOrOrganizationDetails);
-            });
-            return null;
-        });
     }
 
     @Override
