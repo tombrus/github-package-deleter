@@ -1,5 +1,7 @@
 package com.tombrus.githubPackageDeleter;
 
+import java.util.stream.Stream;
+
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 
@@ -19,15 +21,15 @@ public class UserOrOrganizationDetails extends Details {
     }
 
     public long numVersions() {
-        return children.stream().filter(c -> c instanceof PackageDetails).map(c -> (PackageDetails) c).mapToLong(PackageDetails::numVersions).sum();
+        return packageStream().mapToLong(PackageDetails::numVersions).sum();
     }
 
     public long numFiles() {
-        return children.stream().filter(c -> c instanceof PackageDetails).map(c -> (PackageDetails) c).mapToLong(PackageDetails::numFiles).sum();
+        return packageStream().mapToLong(PackageDetails::numFiles).sum();
     }
 
     public long numBytes() {
-        return children.stream().filter(c -> c instanceof PackageDetails).map(c -> (PackageDetails) c).mapToLong(PackageDetails::numBytes).sum();
+        return packageStream().mapToLong(PackageDetails::numBytes).sum();
     }
 
     @Override
@@ -57,5 +59,9 @@ public class UserOrOrganizationDetails extends Details {
 
     @Override
     public void firstExpansion() {
+    }
+
+    public Stream<PackageDetails> packageStream() {
+        return childrenStream().filter(c -> c instanceof PackageDetails).map(c -> (PackageDetails) c);
     }
 }

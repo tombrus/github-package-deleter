@@ -1,6 +1,6 @@
 #!/bin/bash -ue
 
-    JAVA_VERSION="17"
+    JAVA_VERSION="18"
     MAIN_VERSION="1.0.0"
        MAIN_NAME="github-package-deleter"
       MAIN_CLASS="com.tombrus.githubPackageDeleter.GithubPackageDeleter"

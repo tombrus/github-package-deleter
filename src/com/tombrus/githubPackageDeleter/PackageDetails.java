@@ -2,6 +2,7 @@ package com.tombrus.githubPackageDeleter;
 
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -26,11 +27,11 @@ public class PackageDetails extends Details {
     }
 
     public long numFiles() {
-        return children.stream().filter(c -> c instanceof VersionDetails).map(c -> (VersionDetails) c).mapToLong(VersionDetails::numFiles).sum();
+        return versionStream().mapToLong(VersionDetails::numFiles).sum();
     }
 
     public long numBytes() {
-        return children.stream().filter(c -> c instanceof VersionDetails).map(c -> (VersionDetails) c).mapToLong(VersionDetails::numBytes).sum();
+        return versionStream().mapToLong(VersionDetails::numBytes).sum();
     }
 
     @Override
@@ -55,7 +56,7 @@ public class PackageDetails extends Details {
                         // remove all non Details nodes (can be the initial "..." node)
                         childrenStream().filter(c -> !(c instanceof Details)).toList().forEach(DefaultMutableTreeNode::removeFromParent);
 
-                        Map<String, VersionDetails> oldVersionMap = childrenStream().map(c -> (VersionDetails) c).collect(Collectors.toMap(c -> c.name, c -> c));
+                        Map<String, VersionDetails> oldVersionMap = versionStream().collect(Collectors.toMap(c -> c.name, c -> c));
                         Map<String, VersionDetails> newVersionMap = l.stream().collect(Collectors.toMap(c -> c.name, c -> c));
                         oldVersionMap.values().stream().filter(c -> !newVersionMap.containsKey(c.name)).forEach(DefaultMutableTreeNode::removeFromParent);
                         newVersionMap.values().stream().filter(c -> !oldVersionMap.containsKey(c.name)).forEach(this::add);
@@ -69,6 +70,10 @@ public class PackageDetails extends Details {
 
     @Override
     public void firstExpansion() {
-        children.stream().filter(c -> c instanceof VersionDetails).map(c -> (VersionDetails) c).forEach(VersionDetails::startDownload);
+        versionStream().forEach(VersionDetails::startDownload);
+    }
+
+    public Stream<VersionDetails> versionStream() {
+        return childrenStream().filter(c -> c instanceof VersionDetails).map(c -> (VersionDetails) c);
     }
 }

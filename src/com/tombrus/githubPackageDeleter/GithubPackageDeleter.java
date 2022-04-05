@@ -7,6 +7,8 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Set;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
@@ -44,6 +46,9 @@ public class GithubPackageDeleter {
     private JTree       packageTree;
     public  JLabel      rateLimitLabel;
     private JButton     refreshButton;
+    private JButton     expandAllButton;
+    private JButton     collapseAllButton;
+    private JButton     selectObsoleteButton;
 
     //==========================================================================
     private final JFrame           frame;
@@ -124,6 +129,9 @@ public class GithubPackageDeleter {
             }
         });
         refreshButton.addActionListener(e -> refreshPackageTree());
+        expandAllButton.addActionListener(e -> expandAll());
+        collapseAllButton.addActionListener(e -> collapseAll());
+        selectObsoleteButton.addActionListener(e -> selectObsolete());
 
         SwingUtilities.invokeLater(() -> {
             frame.setVisible(true);
@@ -161,8 +169,7 @@ public class GithubPackageDeleter {
         TreePath[] sel = packageTree.getSelectionPaths();
         return sel == null ? Set.of() : Arrays.stream(sel)
                 .map(TreePath::getLastPathComponent)
-                .flatMap(n -> n instanceof PackageDetails ? ((PackageDetails) n).childrenStream() : Stream.of(n))
-                .filter(v -> v instanceof VersionDetails)
+                .flatMap(n -> n instanceof PackageDetails ? ((PackageDetails) n).versionStream() : n instanceof VersionDetails ? Stream.of(n) : null)
                 .map(v -> (VersionDetails) v)
                 .collect(Collectors.toSet());
     }
@@ -201,6 +208,43 @@ public class GithubPackageDeleter {
                 settingsInfoLabel.setText("connecting...");
                 root.startDownload();
             }
+        }
+    }
+
+    public void expandAll() {
+        getPackageDetailsStream().forEach(c -> packageTree.expandPath(new TreePath(c.getPath())));
+    }
+
+    public void collapseAll() {
+        getPackageDetailsStream().forEach(c -> packageTree.collapsePath(new TreePath(c.getPath())));
+    }
+
+    public void selectObsolete() {
+        TreePath[] selectionPaths = getPackageDetailsStream()
+                .filter(p -> 1 < p.getChildCount() && p.childrenStream().allMatch(cc -> (cc instanceof VersionDetails) && ((VersionDetails) cc).name.endsWith("-SNAPSHOT")))
+                .flatMap(p -> p.versionStream()
+                        .collect(Collectors.groupingBy(v -> v.name.replaceAll("-[0-9]*_[0-9]*-SNAPSHOT", "")))
+                        .values()
+                        .stream()
+                        .flatMap(l -> {
+                            VersionDetails max = l.stream().max(Comparator.comparing(v -> v.name)).orElseThrow();
+                            return l.stream().filter(e -> e != max);
+                        }))
+                .map(c -> new TreePath(c.getPath()))
+                .toList()
+                .toArray(new TreePath[0]);
+        packageTree.setSelectionPaths(selectionPaths);
+    }
+
+    private Stream<PackageDetails> getPackageDetailsStream() {
+        Object rawRoot = packageTreeModel.getRoot();
+        if (rawRoot instanceof UserOrOrganizationDetails root) {
+            return Collections.list(root.children())
+                    .stream()
+                    .filter(c -> c instanceof PackageDetails)
+                    .map(c -> (PackageDetails) c);
+        } else {
+            return Stream.of();
         }
     }
 
@@ -287,14 +331,13 @@ public class GithubPackageDeleter {
         tabPanel = new JTabbedPane();
         tabPanel.setPreferredSize(new Dimension(1000, 700));
         GridBagConstraints gbc;
-        gbc           = new GridBagConstraints();
-        gbc.gridx     = 0;
-        gbc.gridy     = 0;
-        gbc.gridwidth = 2;
-        gbc.weightx   = 1.0;
-        gbc.weighty   = 1.0;
-        gbc.fill      = GridBagConstraints.BOTH;
-        gbc.insets    = new Insets(2, 5, 2, 5);
+        gbc         = new GridBagConstraints();
+        gbc.gridx   = 0;
+        gbc.gridy   = 0;
+        gbc.weightx = 1.0;
+        gbc.weighty = 1.0;
+        gbc.fill    = GridBagConstraints.BOTH;
+        gbc.insets  = new Insets(2, 5, 2, 5);
         mainPanel.add(tabPanel, gbc);
         final JPanel panel1 = new JPanel();
         panel1.setLayout(new GridLayoutManager(4, 3, new Insets(0, 0, 0, 0), -1, -1));
@@ -318,33 +361,42 @@ public class GithubPackageDeleter {
         userOrOrganizationField = new JTextField();
         panel1.add(userOrOrganizationField, new GridConstraints(0, 1, 1, 2, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
         final JPanel panel2 = new JPanel();
-        panel2.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
+        panel2.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabPanel.addTab("Deleter", panel2);
         final JScrollPane scrollPane1 = new JScrollPane();
         scrollPane1.setHorizontalScrollBarPolicy(32);
         scrollPane1.setVerticalScrollBarPolicy(22);
-        panel2.add(scrollPane1, new GridConstraints(0, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        panel2.add(scrollPane1, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         packageTree.putClientProperty("JTree.lineStyle", "Angled");
         scrollPane1.setViewportView(packageTree);
+        final JPanel panel3 = new JPanel();
+        panel3.setLayout(new GridLayoutManager(1, 5, new Insets(0, 0, 0, 0), -1, -1));
+        panel2.add(panel3, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        refreshButton = new JButton();
+        refreshButton.setText("Refresh");
+        panel3.add(refreshButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final Spacer spacer2 = new Spacer();
+        panel3.add(spacer2, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+        expandAllButton = new JButton();
+        expandAllButton.setText("Expand All");
+        panel3.add(expandAllButton, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        collapseAllButton = new JButton();
+        collapseAllButton.setText("Collapse All");
+        panel3.add(collapseAllButton, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        selectObsoleteButton = new JButton();
+        selectObsoleteButton.setText("Select Obsolete");
+        panel3.add(selectObsoleteButton, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         rateLimitLabel = new JLabel();
         rateLimitLabel.setHorizontalAlignment(4);
         rateLimitLabel.setMinimumSize(new Dimension(45, 12));
         rateLimitLabel.setText("...");
         rateLimitLabel.setToolTipText("API calls remaining");
         gbc        = new GridBagConstraints();
-        gbc.gridx  = 1;
+        gbc.gridx  = 0;
         gbc.gridy  = 1;
         gbc.anchor = GridBagConstraints.EAST;
         gbc.insets = new Insets(0, 0, 15, 15);
         mainPanel.add(rateLimitLabel, gbc);
-        refreshButton = new JButton();
-        refreshButton.setText("Refresh");
-        gbc        = new GridBagConstraints();
-        gbc.gridx  = 0;
-        gbc.gridy  = 1;
-        gbc.fill   = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(0, 10, 15, 0);
-        mainPanel.add(refreshButton, gbc);
         label1.setLabelFor(githubTokenField);
         label2.setLabelFor(userOrOrganizationField);
     }
