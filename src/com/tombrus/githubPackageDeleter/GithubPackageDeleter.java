@@ -20,6 +20,10 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -45,6 +49,11 @@ public class GithubPackageDeleter {
     private static final String               USER_OR_ORGANIZATION = "userOrOrganization";
 
     public static void main(String[] args) {
+        try {
+            Files.writeString(Path.of("/tmp/x4711"), "Hello World " + LocalDateTime.now());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     //==========================================================================
@@ -179,10 +188,10 @@ public class GithubPackageDeleter {
     private Set<VersionDetails> selectedVersions() {
         TreePath[] sel = packageTree.getSelectionPaths();
         return sel == null ? Set.of() : Arrays.stream(sel)
-                .map(TreePath::getLastPathComponent)
-                .flatMap(n -> n instanceof PackageDetails ? ((PackageDetails) n).versionStream() : n instanceof VersionDetails ? Stream.of(n) : null)
-                .map(v -> (VersionDetails) v)
-                .collect(Collectors.toSet());
+                                              .map(TreePath::getLastPathComponent)
+                                              .flatMap(n -> n instanceof PackageDetails ? ((PackageDetails) n).versionStream() : n instanceof VersionDetails ? Stream.of(n) : null)
+                                              .map(v -> (VersionDetails) v)
+                                              .collect(Collectors.toSet());
     }
 
     public DefaultTreeModel getPackageTreeModel() {
@@ -232,18 +241,18 @@ public class GithubPackageDeleter {
 
     public void selectObsolete() {
         TreePath[] selectionPaths = getPackageDetailsStream()
-                .filter(p -> 1 < p.getChildCount() && p.childrenStream().allMatch(cc -> (cc instanceof VersionDetails) && ((VersionDetails) cc).name.endsWith("-SNAPSHOT")))
-                .flatMap(p -> p.versionStream()
-                        .collect(Collectors.groupingBy(v -> v.name.replaceAll("-[0-9]*_[0-9]*-SNAPSHOT", "")))
-                        .values()
-                        .stream()
-                        .flatMap(l -> {
-                            VersionDetails max = l.stream().max(Comparator.comparing(v -> v.name)).orElseThrow();
-                            return l.stream().filter(e -> e != max);
-                        }))
-                .map(c -> new TreePath(c.getPath()))
-                .toList()
-                .toArray(new TreePath[0]);
+                                            .filter(p -> 1 < p.getChildCount() && p.childrenStream().allMatch(cc -> (cc instanceof VersionDetails) && ((VersionDetails) cc).name.endsWith("-SNAPSHOT")))
+                                            .flatMap(p -> p.versionStream()
+                                                           .collect(Collectors.groupingBy(v -> v.name.replaceAll("-[0-9]*_[0-9]*-SNAPSHOT", "")))
+                                                           .values()
+                                                           .stream()
+                                                           .flatMap(l -> {
+                                                               VersionDetails max = l.stream().max(Comparator.comparing(v -> v.name)).orElseThrow();
+                                                               return l.stream().filter(e -> e != max);
+                                                           }))
+                                            .map(c -> new TreePath(c.getPath()))
+                                            .toList()
+                                            .toArray(new TreePath[0]);
         packageTree.setSelectionPaths(selectionPaths);
     }
 
@@ -251,9 +260,9 @@ public class GithubPackageDeleter {
         Object rawRoot = packageTreeModel.getRoot();
         if (rawRoot instanceof UserOrOrganizationDetails root) {
             return Collections.list(root.children())
-                    .stream()
-                    .filter(c -> c instanceof PackageDetails)
-                    .map(c -> (PackageDetails) c);
+                              .stream()
+                              .filter(c -> c instanceof PackageDetails)
+                              .map(c -> (PackageDetails) c);
         } else {
             return Stream.of();
         }

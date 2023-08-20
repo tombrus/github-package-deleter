@@ -1,10 +1,10 @@
 #!/bin/bash -ue
 
-    JAVA_VERSION="18"
-    MAIN_VERSION="1.0.0"
+    JAVA_VERSION="17"
+    MAIN_VERSION="1.1.0"
        MAIN_NAME="github-package-deleter"
       MAIN_CLASS="com.tombrus.githubPackageDeleter.GithubPackageDeleter"
-        LIB_JARS=("lib/mvg-json-1.6.3.jar")
+        LIB_JARS=("lib/mvg-json-1.6.3.jar" "/Users/tom/.m2/repository/com/formdev/flatlaf/3.0/flatlaf-3.0.jar")
    EXTRA_MODULES="jdk.crypto.ec,jdk.localedata"
    MAIN_ICON_PNG="$MAIN_NAME.png"
  MAIN_CLASS_FILE="out/production/$MAIN_NAME/${MAIN_CLASS//.//}.class"
