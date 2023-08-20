@@ -64,8 +64,8 @@ public class VersionDeleter extends GraphQL<Answer> {
     }
 
     public static class Answer {
-        List<ErrorInfo> errors;
         Data            data;
+        List<ErrorInfo> errors;
     }
 
     public static class Data {

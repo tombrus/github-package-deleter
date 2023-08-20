@@ -1,15 +1,16 @@
 package com.tombrus.githubPackageDeleter;
 
-import java.util.stream.Stream;
-
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
+import java.util.stream.Stream;
 
 public class VersionDetails extends Details {
     public final PackageDetails packageDetails;
     final        String         name;
     final        String         id;
     final        long           numFiles;
+    private      boolean        downloading;
+    private      boolean        downloaded;
 
     public VersionDetails(PackageDetails packageDetails, String name, String id, int totalCount) {
         this.packageDetails = packageDetails;
@@ -34,6 +35,7 @@ public class VersionDetails extends Details {
     }
 
     public void startDownload() {
+        downloading = true;
         new FileLister(this).list().whenCompleteAsync((l, thr) -> SwingUtilities.invokeLater(() -> {
             removeAllChildren();
             if (thr == null) {
@@ -44,7 +46,17 @@ public class VersionDetails extends Details {
             packageTreeModel.nodeStructureChanged(this);
             packageTreeModel.nodeChanged(packageDetails);
             packageTreeModel.nodeChanged(packageDetails.userOrOrganizationDetails);
+            downloading = false;
+            downloaded  = true;
         }));
+    }
+
+    public boolean isDownloading() {
+        return downloading;
+    }
+
+    public boolean isDownloaded() {
+        return downloaded;
     }
 
     @Override

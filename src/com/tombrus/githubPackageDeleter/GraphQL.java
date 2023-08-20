@@ -3,6 +3,7 @@ package com.tombrus.githubPackageDeleter;
 import org.modelingvalue.json.Json;
 import org.modelingvalue.json.JsonPrettyfier;
 
+import javax.swing.*;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -10,9 +11,8 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-
-import javax.swing.*;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -49,6 +49,7 @@ public class GraphQL<A> {
             conn.setRequestProperty("Authorization", "bearer " + TokenStore.getToken());
             conn.setRequestProperty("Accept-Encoding", "json");
             conn.setRequestProperty("Content-Type", "application/json");
+            conn.setRequestProperty("X-Github-Next-Global-ID", "1"); // use the new ids
             if (packageDeletesPreview) {
                 conn.setRequestProperty("Accept", "application/vnd.github.package-deletes-preview+json");
             }
@@ -85,13 +86,17 @@ public class GraphQL<A> {
         }
     }
 
-    public record RateLimit(long limit, long remaining, long reset, long used, String resource) {
+    public record RateLimit(long limit,
+                            long remaining,
+                            long reset,
+                            long used,
+                            String resource) {
         public RateLimit(HttpURLConnection conn) {
             this(Long.parseLong(conn.getHeaderField("X-RateLimit-Limit")),
-                    Long.parseLong(conn.getHeaderField("X-RateLimit-Remaining")),
-                    Long.parseLong(conn.getHeaderField("X-RateLimit-Reset")),
-                    Long.parseLong(conn.getHeaderField("X-RateLimit-Used")),
-                    conn.getHeaderField("X-RateLimit-Resource"));
+                 Long.parseLong(conn.getHeaderField("X-RateLimit-Remaining")),
+                 Long.parseLong(conn.getHeaderField("X-RateLimit-Reset")),
+                 Long.parseLong(conn.getHeaderField("X-RateLimit-Used")),
+                 conn.getHeaderField("X-RateLimit-Resource"));
             SwingUtilities.invokeLater(() -> GithubPackageDeleter.INSTANCE.rateLimitLabel.setText("" + remaining));
         }
     }
@@ -118,10 +123,29 @@ public class GraphQL<A> {
 
     @SuppressWarnings("unused")
     public static class Extensions {
-        String code;
-        String name;
-        String typeName;
-        String argumentName;
-        String fieldName;
+        String        code;
+        String        name;
+        String        typeName;
+        String        argumentName;
+        String        fieldName;
+        List<Warning> warnings;
+
+        public void report() {
+            if (warnings != null) {
+                warnings.forEach(Warning::report);
+            }
+        }
+    }
+
+    @SuppressWarnings("unused")
+    public static class Warning {
+        String              type;
+        String              message;
+        String              link;
+        Map<String, String> data;
+
+        public void report() {
+            System.err.println("WARNING: " + type + ": " + message + " (" + link + ")");
+        }
     }
 }

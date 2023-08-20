@@ -1,35 +1,35 @@
 package com.tombrus.githubPackageDeleter;
 
+import com.tombrus.githubPackageDeleter.VersionLister.Answer;
+
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import com.tombrus.githubPackageDeleter.VersionLister.Answer;
-
 public class VersionLister extends Paginator<Answer, List<VersionDetails>> {
     private final static String           VERSION_QUERY = """
-            query {
-                node(id:"%s") {
-                    ... on Package {
-                        name
-                        versions(@SELECTOR@) {
-                            pageInfo {
-                                hasNextPage
-                                endCursor
-                            }
-                            nodes {
-                                id
-                                version
-                                files(first:1) {
-                                    totalCount
-                                }
-                            }
-                        }
-                    }
-                }
-            }""";
+                                                          query {
+                                                              node(id:"%s") {
+                                                                  ... on Package {
+                                                                      name
+                                                                      versions(@SELECTOR@) {
+                                                                          pageInfo {
+                                                                              hasNextPage
+                                                                              endCursor
+                                                                          }
+                                                                          nodes {
+                                                                              id
+                                                                              version
+                                                                              files(first:1) {
+                                                                                  totalCount
+                                                                              }
+                                                                          }
+                                                                      }
+                                                                  }
+                                                              }
+                                                          }""";
     private final        PackageDetails   packageDetails;
     private              Consumer<Answer> peeker;
 
@@ -59,11 +59,14 @@ public class VersionLister extends Paginator<Answer, List<VersionDetails>> {
 
     @Override
     protected List<VersionDetails> harvest(List<VersionDetails> preResult, Answer answer) {
-        if (peeker != null) {
-            peeker.accept(answer);
+        if (answer.extensions != null) {
+            answer.extensions.report();
         }
         if (answer.errors != null) {
             throw new Error(answer.errors.stream().map(e -> e.message).toList().toString());
+        }
+        if (peeker != null) {
+            peeker.accept(answer);
         }
         Stream<VersionDetails> packagesStream = answer.data.node.versions.nodes.stream().map(ver -> new VersionDetails(packageDetails, ver.version, ver.id, ver.files.totalCount));
         if (preResult != null) {
@@ -75,6 +78,7 @@ public class VersionLister extends Paginator<Answer, List<VersionDetails>> {
     public static class Answer {
         Data            data;
         List<ErrorInfo> errors;
+        Extensions      extensions;
     }
 
     public static class Data {

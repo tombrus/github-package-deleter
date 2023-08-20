@@ -1,11 +1,10 @@
 package com.tombrus.githubPackageDeleter;
 
+import javax.swing.*;
+import javax.swing.tree.DefaultMutableTreeNode;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import javax.swing.*;
-import javax.swing.tree.DefaultMutableTreeNode;
 
 public class PackageDetails extends Details {
     public final UserOrOrganizationDetails userOrOrganizationDetails;
@@ -34,9 +33,21 @@ public class PackageDetails extends Details {
         return versionStream().mapToLong(VersionDetails::numBytes).sum();
     }
 
+    public String numBytesHuman() {
+        boolean anyDownloading = versionStream().anyMatch(VersionDetails::isDownloading);
+        boolean allDownloaded  = versionStream().allMatch(VersionDetails::isDownloaded);
+        if (allDownloaded) {
+            return U.humanReadable(numBytes());
+        }
+        if (anyDownloading) {
+            return U.humanReadable(numBytes()) + "...";
+        }
+        return "...";
+    }
+
     @Override
     public String toString() {
-        return name + " [" + U.humanReadable(numVersions()) + " versions, " + U.humanReadable(numFiles()) + " files, " + U.humanReadable(numBytes()) + " bytes] " + getComment();
+        return name + " [" + U.humanReadable(numVersions()) + " versions, " + U.humanReadable(numFiles()) + " files, " + numBytesHuman() + " bytes] " + getComment();
     }
 
     public void startDownload() {
