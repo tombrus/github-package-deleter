@@ -2,6 +2,8 @@ package com.tombrus.githubPackageDeleter;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.stream.Stream;
 
 public class VersionDetails extends Details {
@@ -9,14 +11,19 @@ public class VersionDetails extends Details {
     final        String         name;
     final        String         id;
     final        long           numFiles;
-    private      boolean        downloading;
-    private      boolean        downloaded;
+    final        long           downloadsTotalCount;
+    final        LocalDateTime  at;
 
-    public VersionDetails(PackageDetails packageDetails, String name, String id, int totalCount) {
-        this.packageDetails = packageDetails;
-        this.name           = name;
-        this.id             = id;
-        this.numFiles       = totalCount;
+    private boolean downloading;
+    private boolean downloaded;
+
+    public VersionDetails(PackageDetails packageDetails, String name, String id, long totalCount, long downloadsTotalCount, LocalDateTime at) {
+        this.packageDetails      = packageDetails;
+        this.name                = name;
+        this.id                  = id;
+        this.numFiles            = totalCount;
+        this.downloadsTotalCount = downloadsTotalCount;
+        this.at                  = at;
         setAllowsChildren(true);
         add(new DefaultMutableTreeNode("..."));
     }
@@ -31,7 +38,8 @@ public class VersionDetails extends Details {
 
     @Override
     public String toString() {
-        return name + " [" + U.humanReadable(numFiles()) + " files, " + U.humanReadable(numBytes()) + " bytes] " + getComment();
+        String atString = at == null ? "" : at.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) + ", ";
+        return name + " [" + U.humanReadable(numFiles()) + " files, " + U.humanReadable(numBytes()) + " bytes, " + atString + U.humanReadable(downloadsTotalCount) + " downloads" + "] " + getComment();
     }
 
     public void startDownload() {

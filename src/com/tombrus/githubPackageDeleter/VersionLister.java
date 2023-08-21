@@ -2,11 +2,14 @@ package com.tombrus.githubPackageDeleter;
 
 import com.tombrus.githubPackageDeleter.VersionLister.Answer;
 
+import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
+
+import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
 public class VersionLister extends Paginator<Answer, List<VersionDetails>> {
     private final static String           VERSION_QUERY = """
@@ -24,6 +27,13 @@ public class VersionLister extends Paginator<Answer, List<VersionDetails>> {
                                                                               version
                                                                               files(first:1) {
                                                                                   totalCount
+                                                                                  nodes {
+                                                                                      name
+                                                                                      updatedAt
+                                                                                  }
+                                                                              }
+                                                                              statistics {
+                                                                                  downloadsTotalCount
                                                                               }
                                                                           }
                                                                       }
@@ -68,7 +78,11 @@ public class VersionLister extends Paginator<Answer, List<VersionDetails>> {
         if (peeker != null) {
             peeker.accept(answer);
         }
-        Stream<VersionDetails> packagesStream = answer.data.node.versions.nodes.stream().map(ver -> new VersionDetails(packageDetails, ver.version, ver.id, ver.files.totalCount));
+        Stream<VersionDetails> packagesStream = answer.data.node.versions.nodes.stream()
+                                                                               .map(ver -> {
+                                                                                   LocalDateTime at = ver.files.nodes.stream().map(n -> LocalDateTime.parse(n.updatedAt.replaceAll("Z.*", ""), ISO_LOCAL_DATE_TIME)).findFirst().orElse(null);
+                                                                                   return new VersionDetails(packageDetails, ver.version, ver.id, ver.files.totalCount, ver.statistics.downloadsTotalCount, at);
+                                                                               });
         if (preResult != null) {
             packagesStream = Stream.concat(preResult.stream(), packagesStream);
         }
@@ -96,12 +110,23 @@ public class VersionLister extends Paginator<Answer, List<VersionDetails>> {
     }
 
     public static class VersionNode {
-        String version;
-        String id;
-        Files  files;
+        String                   version;
+        String                   id;
+        Files                    files;
+        PackageVersionStatistics statistics;
     }
 
     public static class Files {
-        int totalCount;
+        int               totalCount;
+        List<PackageFile> nodes;
+    }
+
+    public static class PackageFile {
+        String name;
+        String updatedAt;
+    }
+
+    public static class PackageVersionStatistics {
+        int downloadsTotalCount;
     }
 }

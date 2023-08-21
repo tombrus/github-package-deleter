@@ -53,7 +53,8 @@ public class PackageDetails extends Details {
     public void startDownload() {
         new VersionLister(this)
                 .peek(a -> name = a.data.node.name)
-                .list().whenCompleteAsync((l, thr) -> SwingUtilities.invokeLater(() -> {
+                .list()
+                .whenCompleteAsync((l, thr) -> SwingUtilities.invokeLater(() -> {
                     if (thr != null) {
                         removeAllChildren();
                         add(new DefaultMutableTreeNode(thr.getMessage()));
