@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
-import java.net.URL;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
@@ -44,7 +44,7 @@ public class GraphQL<A> {
     private A run(String graphql) {
         try {
             String            sanatizedQuery = graphql.replace("\"", "\\\"").replaceAll("\n", "\\\\n");
-            HttpURLConnection conn           = (HttpURLConnection) new URL(GITHUB_API_URL).openConnection();
+            HttpURLConnection conn           = (HttpURLConnection) URI.create(GITHUB_API_URL).toURL().openConnection();
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Authorization", "bearer " + TokenStore.getToken());
             conn.setRequestProperty("Accept-Encoding", "json");
