@@ -144,7 +144,12 @@ public class GithubPackageDeleter {
         });
         packageTree.addMouseListener(new MouseAdapter() {
             @Override
-            public void mouseClicked(MouseEvent e) {
+            public void mousePressed(MouseEvent e) {
+                clickInTree(e);
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
                 clickInTree(e);
             }
         });
@@ -160,7 +165,8 @@ public class GithubPackageDeleter {
     }
 
     private void clickInTree(MouseEvent e) {
-        if (SwingUtilities.isRightMouseButton(e)) {
+        // macOS fires the popup trigger on press, other platforms on release
+        if (e.isPopupTrigger()) {
             TreePath path = packageTree.getClosestPathForLocation(e.getX(), e.getY());
             if (!packageTree.isPathSelected(path)) {
                 packageTree.setSelectionPath(path);
